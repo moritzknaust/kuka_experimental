@@ -216,7 +216,7 @@
       <parent link="${prefix}base_link"/>
       <child link="${prefix}link_1"/>
       <axis xyz="0 0 1"/>
-      <limit effort="0" lower="${radians(-155)}" upper="${radians(155)}" velocity="${radians(154)}"/>
+      <limit effort="50" lower="${radians(-155)}" upper="${radians(155)}" velocity="${radians(154)}"/>
     </joint>
     <!-- joint 2 (A2) -->
     <joint name="${prefix}joint_a2" type="revolute">
@@ -224,7 +224,7 @@
       <parent link="${prefix}link_1"/>
       <child link="${prefix}link_2"/>
       <axis xyz="0 0 1"/>
-      <limit effort="0" lower="${radians(-180)}" upper="${radians(65)}" velocity="${radians(154)}"/>
+      <limit effort="50" lower="${radians(-180)}" upper="${radians(65)}" velocity="${radians(154)}"/>
     </joint>
     <!-- joint 3 (A3) -->
     <joint name="${prefix}joint_a3" type="revolute">
@@ -232,7 +232,7 @@
       <parent link="${prefix}link_2"/>
       <child link="${prefix}link_3"/>
       <axis xyz="0 0 1"/>
-      <limit effort="0" lower="${radians(-15)}" upper="${radians(158)}" velocity="${radians(228)}"/>
+      <limit effort="50" lower="${radians(-15)}" upper="${radians(158)}" velocity="${radians(228)}"/>
     </joint>
     <!-- joint 4 (A4) -->
     <joint name="${prefix}joint_a4" type="revolute">
@@ -240,7 +240,7 @@
       <parent link="${prefix}link_3"/>
       <child link="${prefix}link_4"/>
       <axis xyz="0 0 1"/>
-      <limit effort="0" lower="${radians(-350)}" upper="${radians(350)}" velocity="${radians(343)}"/>
+      <limit effort="50" lower="${radians(-350)}" upper="${radians(350)}" velocity="${radians(343)}"/>
     </joint>
     <!-- joint 5 (A5) -->
     <joint name="${prefix}joint_a5" type="revolute">
@@ -248,7 +248,7 @@
       <parent link="${prefix}link_4"/>
       <child link="${prefix}link_5"/>
       <axis xyz="0 0 1"/>
-      <limit effort="0" lower="${radians(-130)}" upper="${radians(130)}" velocity="${radians(384)}"/>
+      <limit effort="50" lower="${radians(-130)}" upper="${radians(130)}" velocity="${radians(384)}"/>
     </joint>
     <!-- joint 6 (A6) -->
     <joint name="${prefix}joint_a6" type="revolute">
@@ -256,7 +256,7 @@
       <parent link="${prefix}link_5"/>
       <child link="${prefix}link_6"/>
       <axis xyz="0 0 1"/>
-      <limit effort="0" lower="${radians(-350)}" upper="${radians(350)}" velocity="${radians(721)}"/>
+      <limit effort="50" lower="${radians(-350)}" upper="${radians(350)}" velocity="${radians(721)}"/>
     </joint>
     <!-- tool frame - fixed frame -->
     <joint name="${prefix}joint_a6-tool0" type="fixed">
