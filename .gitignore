@@ -52,3 +52,5 @@ qtcreator-*
 CATKIN_IGNORE
 
 kuka_kr5_support/.vscode/
+
+.vscode/
