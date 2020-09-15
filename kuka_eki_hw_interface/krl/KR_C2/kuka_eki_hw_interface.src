@@ -36,7 +36,6 @@ DEF  kuka_eki_hw_interface()
    ; Declarations
    DECL AXIS joint_pos_tgt
    DECL INT elements_read
-   DECL INT read_order = 0    ; 0=FIFO, 1=LIFO
 
    ; INI
    BAS(#INITMOV, 0)  ; Basic initializasion of axes
@@ -149,6 +148,8 @@ DEFFCT INT eki_hw_iface_get(joint_pos_cmd :out)
    DECL BOOL eki_ret
    DECL BOOL bNew
    DECL AXIS joint_pos_cmd
+   DECL INT read_order
+   read_order = 0    ; 0=FIFO, 1=LIFO
 
    IF not $FLAG[1] then
       return 0
@@ -172,8 +173,11 @@ ENDFCT
 
 DEF eki_hw_iface_reset()
    DECL INT eki_ret
+   DECL BOOL eki_err
 
-   eki_ret = EKX_Close("EkiHwInterface")
-   eki_ret = EKI_Open("EkiHwInterface")
+   eki_err = EKX_Close("EkiHwInterface")
+   
+   eki_ret = EKX_Open("EkiHwInterface")
    EKX_HandleError(eki_ret)
+   
 END
