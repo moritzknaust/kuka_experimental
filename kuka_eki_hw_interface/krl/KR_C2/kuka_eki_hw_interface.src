@@ -1,4 +1,5 @@
-&ACCESS RVO
+&ACCESS RVP
+&REL 17
 DEF  kuka_eki_hw_interface()
 
    ; Software License Agreement (BSD License)
@@ -30,7 +31,7 @@ DEF  kuka_eki_hw_interface()
    ; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
    ; POSSIBILITY OF SUCH DAMAGE.
 
-   ; Author: Moritz Knaust (TU Darmstadt) <moritz.knaust@rmr.tu-darmstadt.de>
+   ; Author: Moritz Knaust (TU Darmstadt) <moritz.knaustrmr.tu-darmstadt.de>
 
 
    ; Declarations
@@ -70,8 +71,13 @@ DEF  kuka_eki_hw_interface()
    $ADVANCE = 5
    loop
       elements_read = eki_hw_iface_get(joint_pos_tgt)  ; Get new command from buffer if present
-      PTP joint_pos_tgt C_PTP                          ; PTP to most recent commanded position
+      IF elements_read == 1 THEN
+         PTP joint_pos_tgt C_PTP                          ; PTP to most recent commanded position  
+   ENDIF
+
    endloop
+
+
 
    ; Note: EKI channels delete on reset or deselect of this program
    ;       See <ENVIRONMENT>Program</ENVIRONMENT> EKI config element
@@ -85,16 +91,18 @@ DEF eki_hw_iface_init()
    ; Setup interrupts
    ; Interrupt 15 - Connection cleanup on client disconnect
    GLOBAL INTERRUPT DECL 15 WHEN $FLAG[1]==FALSE DO eki_hw_iface_reset()
-   INTERRUPT on 15
+   INTERRUPT ON 15
    ; Interrupt 16 - Timer INTERRUPT for periodic state transmission
    GLOBAL INTERRUPT DECL 16 WHEN $timer_flag[1]==TRUE DO eki_hw_iface_send()
-   INTERRUPT on 16
-   wait sec 0.012          ; Wait for next interpolation cycle
+   INTERRUPT ON 16
+   WAIT SEC 0.012          ; Wait for next interpolation cycle
    $TIMER[1] = -200        ; Time in [ms] before first INTERRUPT call
    $TIMER_STOP[1] = FALSE  ; Start timer 1
 
    ; Create and open EKI interface
    eki_ret = EKX_OPEN("EkiHwInterface")
+EKX_HandleError(eki_ret)
+$FLAG[1]=TRUE
 END
 
 
@@ -106,29 +114,29 @@ DEF eki_hw_iface_send()
    IF $FLAG[1] THEN  ; If connection alive
       ; Load state values into xml structure
       ; position
-      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Pos/@A1", $AXIS_ACT.a1)
-      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Pos/@A2", $AXIS_ACT.a2)
-      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Pos/@A3", $AXIS_ACT.a3)
-      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Pos/@A4", $AXIS_ACT.a4)
-      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Pos/@A5", $AXIS_ACT.a5)
-      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Pos/@A6", $AXIS_ACT.a6)
+      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState.Pos.A1", $AXIS_ACT.a1)
+      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState.Pos.A2", $AXIS_ACT.a2)
+      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState.Pos.A3", $AXIS_ACT.a3)
+      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState.Pos.A4", $AXIS_ACT.a4)
+      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState.Pos.A5", $AXIS_ACT.a5)
+      eki_ret = EKX_WriteReal("EkiHwInterface.RobotState.Pos.A6", $AXIS_ACT.a6)
       ; velocity
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/@A1", $vel_axis_act[1] * $vel_axis_ma[1] / 100.0)
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/@A2", $vel_axis_act[2] * $vel_axis_ma[2] / 100.0)
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/@A3", $vel_axis_act[3] * $vel_axis_ma[3] / 100.0)
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/@A4", $vel_axis_act[4] * $vel_axis_ma[4] / 100.0)
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/@A5", $vel_axis_act[5] * $vel_axis_ma[5] / 100.0)
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/@A6", $vel_axis_act[6] * $vel_axis_ma[6] / 100.0)
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/A1", $vel_axis_act[1] * $vel_axis_ma[1] / 100.0)
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/A2", $vel_axis_act[2] * $vel_axis_ma[2] / 100.0)
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/A3", $vel_axis_act[3] * $vel_axis_ma[3] / 100.0)
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/A4", $vel_axis_act[4] * $vel_axis_ma[4] / 100.0)
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/A5", $vel_axis_act[5] * $vel_axis_ma[5] / 100.0)
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Vel/A6", $vel_axis_act[6] * $vel_axis_ma[6] / 100.0)
       ; effort
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/@A1", $torque_axis_act[1])
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/@A2", $torque_axis_act[2])
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/@A3", $torque_axis_act[3])
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/@A4", $torque_axis_act[4])
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/@A5", $torque_axis_act[5])
-      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/@A6", $torque_axis_act[6])
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/A1", $torque_axis_act[1])
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/A2", $torque_axis_act[2])
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/A3", $torque_axis_act[3])
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/A4", $torque_axis_act[4])
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/A5", $torque_axis_act[5])
+      ;eki_ret = EKX_WriteReal("EkiHwInterface.RobotState/Eff/A6", $torque_axis_act[6])
       ; interface state
-      ; eki_ret = eki_checkbuffer("EkiHwInterface.RobotCommand/Pos/@A1")
-      eki_ret = EKX_WriteInteger("EkiHwInterface.RobotState/RobotCommand/@Size", 1) ; TODO test this!
+      ; eki_ret = eki_checkbuffer("EkiHwInterface.RobotCommand/Pos/A1")
+      eki_ret = EKX_WriteInteger("EkiHwInterface.RobotState.RobotCommand.Size", 1) ; TODO test this!
 
       ; Send xml structure
       IF $FLAG[1] then  ; Make sure connection hasn't died while updating xml structure
@@ -155,18 +163,19 @@ DEFFCT INT eki_hw_iface_get(joint_pos_cmd :out)
       return 0
    ENDIF
 
-   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand/Pos/@A1", joint_pos_cmd.a1, bNew)
-   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand/Pos/@A2", joint_pos_cmd.a2, bNew)
-   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand/Pos/@A3", joint_pos_cmd.a3, bNew)
-   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand/Pos/@A4", joint_pos_cmd.a4, bNew)
-   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand/Pos/@A5", joint_pos_cmd.a5, bNew)
-   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand/Pos/@A6", joint_pos_cmd.a6, bNew)
+   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand.Pos.A1", joint_pos_cmd.a1, bNew)
+   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand.Pos.A2", joint_pos_cmd.a2, bNew)
+   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand.Pos.A3", joint_pos_cmd.a3, bNew)
+   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand.Pos.A4", joint_pos_cmd.a4, bNew)
+   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand.Pos.A5", joint_pos_cmd.a5, bNew)
+   eki_ret = EKX_GetRealElement(read_order, "EkiHwInterface.RobotCommand.Pos.A6", joint_pos_cmd.a6, bNew)
    IF eki_ret == FALSE THEN 
       return 0
    ENDIF
    IF bNew == FALSE THEN
       return 0
    ENDIF
+return 1
 ENDFCT
 
 
@@ -179,5 +188,6 @@ DEF eki_hw_iface_reset()
    
    eki_ret = EKX_Open("EkiHwInterface")
    EKX_HandleError(eki_ret)
+   $FLAG[1]=TRUE
    
 END
