@@ -35,6 +35,7 @@
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <memory>
 
 #include <angles/angles.h>
 
@@ -46,9 +47,13 @@
 namespace kuka_eki_hw_interface
 {
 
-KukaEkiHardwareInterface::KukaEkiHardwareInterface() : joint_position_(n_dof_, 0.0), joint_velocity_(n_dof_, 0.0),
-    joint_effort_(n_dof_, 0.0), joint_position_command_(n_dof_, 0.0), joint_names_(n_dof_), deadline_(ios_),
-    eki_server_socket_(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0))
+KukaEkiHardwareInterface::KukaEkiHardwareInterface() :
+    joint_position_(n_dof_, 0.0),
+    joint_velocity_(n_dof_, 0.0),
+    joint_effort_(n_dof_, 0.0),
+    joint_position_command_(n_dof_, 0.0),
+    joint_names_(n_dof_), deadline_(ios_),
+    eki_server_socket_(ios_)
 {
 
 }
@@ -87,7 +92,7 @@ bool KukaEkiHardwareInterface::eki_read_state(std::vector<double> &joint_positio
   static boost::array<char, 2048> in_buffer;
 
   // Read socket buffer (with timeout)
-  // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
+  // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_tcp_client.cpp
   deadline_.expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));  // set deadline
   boost::system::error_code ec = boost::asio::error::would_block;
   size_t len = 0;
@@ -160,8 +165,9 @@ bool KukaEkiHardwareInterface::eki_write_command(const std::vector<double> &join
   xml_printer.SetStreamPrinting();  // no linebreaks
   xml_out.Accept(&xml_printer);
 
-  size_t len = eki_server_socket_.send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
-                                          eki_server_endpoint_);
+  //size_t len = eki_server_socket_.send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
+  //                                        eki_server_endpoint_);
+  eki_server_socket_.send(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()));
 
   return true;
 }
@@ -177,21 +183,18 @@ void KukaEkiHardwareInterface::init()
   }
 
   // Get EKI parameters from parameter server
-  const std::string param_addr = "eki/robot_address";
   const std::string param_port = "eki/robot_port";
   const std::string param_socket_timeout = "eki/socket_timeout";
   const std::string param_max_cmd_buf_len = "eki/max_cmd_buf_len";
 
-  if (nh_.getParam(param_addr, eki_server_address_) &&
-      nh_.getParam(param_port, eki_server_port_))
+  if (nh_.getParam(param_port, eki_server_port_))
   {
     ROS_INFO_STREAM_NAMED("kuka_eki_hw_interface", "Configuring Kuka EKI hardware interface on: "
-                          << eki_server_address_ << ", " << eki_server_port_);
+                          << eki_server_port_);
   }
   else
   {
-    std::string msg = "Failed to get EKI address/port from parameter server (looking for '" + param_addr +
-                      "', '" + param_port + "')";
+    std::string msg = "Failed to get EKI address/port from parameter server (looking for '" + param_port + "')";
     ROS_ERROR_STREAM(msg);
     throw std::runtime_error(msg);
   }
@@ -248,10 +251,10 @@ void KukaEkiHardwareInterface::start()
 
   // Start client
   ROS_INFO_NAMED("kuka_eki_hw_interface", "... connecting to robot's EKI server...");
-  boost::asio::ip::udp::resolver resolver(ios_);
-  eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
-  boost::array<char, 1> ini_buf = { 0 };
-  eki_server_socket_.send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);  // initiate contact to start server
+
+  boost::asio::ip::tcp::acceptor acceptor(ios_, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), eki_server_port_));
+  acceptor.accept(eki_server_socket_);
+
 
   // Start persistent actor to check for eki_read_state timeouts
   deadline_.expires_at(boost::posix_time::pos_infin);  // do nothing unit a read is invoked (deadline_ = +inf)
