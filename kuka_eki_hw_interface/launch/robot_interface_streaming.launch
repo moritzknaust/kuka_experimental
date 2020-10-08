@@ -31,8 +31,8 @@
           continue with those).
 -->
 
-  <arg name="robot_ip" doc="IP of the EKI interface on the robot controller" />
-  <arg name="port" default="54600" doc="UDP port of the EKI interface on the robot controller" />
+  <arg name="robot_ip" default="172.16.99.99" doc="IP of the EKI interface on the robot controller" />
+  <arg name="port" default="6008" doc="UDP port of the EKI interface on the robot controller" />
 
   <!-- name of the ros_control controllers (see below) -->
   <arg name="js_ctrlr" value="joint_state_controller" />

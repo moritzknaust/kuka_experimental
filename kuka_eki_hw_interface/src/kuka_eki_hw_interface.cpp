@@ -89,7 +89,8 @@ bool KukaEkiHardwareInterface::eki_read_state(std::vector<double> &joint_positio
                                               std::vector<double> &joint_effort,
                                               int &cmd_buff_len)
 {
-  static boost::array<char, 2048> in_buffer;
+  static boost::array<char, 4096> in_buffer;
+  in_buffer.fill(' ');
 
   // Read socket buffer (with timeout)
   // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_tcp_client.cpp
@@ -101,12 +102,21 @@ bool KukaEkiHardwareInterface::eki_read_state(std::vector<double> &joint_positio
   do
     ios_.run_one();
   while (ec == boost::asio::error::would_block);
-  if (ec)
+  if (ec){
+    ROS_WARN_STREAM_NAMED("kuka_ehi_hw_interface", "eki error: " + ec.message());
     return false;
+  }
 
   // Update joint positions from XML packet (if received)
-  if (len == 0)
+  if (len == 0){
+      ROS_WARN_STREAM_NAMED("kuka_ehi_hw_interface", "received XML packet is empty");
     return false;
+  }
+
+  if (len >= 4096){
+      ROS_WARN_STREAM_NAMED("kuka_ehi_hw_interface", "received strange XML packet");
+    return false;
+  }
 
   // Parse XML
   TiXmlDocument xml_in;
@@ -114,14 +124,19 @@ bool KukaEkiHardwareInterface::eki_read_state(std::vector<double> &joint_positio
   xml_in.Parse(in_buffer.data());
   TiXmlElement* robot_state = xml_in.FirstChildElement("RobotState");
   if (!robot_state)
-    return false;
+  {
+      ROS_WARN_STREAM_NAMED("kuka_ehi_hw_interface", "Missing RobotState XML packet");
+      return false;
+  }
   TiXmlElement* pos = robot_state->FirstChildElement("Pos");
   TiXmlElement* vel = robot_state->FirstChildElement("Vel");
   TiXmlElement* eff = robot_state->FirstChildElement("Eff");
   TiXmlElement* robot_command = robot_state->FirstChildElement("RobotCommand");
   if (!pos || !vel || !eff || !robot_command)
+  {
+    ROS_WARN_STREAM_NAMED("kuka_ehi_hw_interface", "Missing filed in RobotState XML packet");
     return false;
-
+  }
   // Extract axis positions
   double joint_pos;  // [deg]
   double joint_vel;  // [%max]
@@ -140,7 +155,7 @@ bool KukaEkiHardwareInterface::eki_read_state(std::vector<double> &joint_positio
 
   // Extract number of command elements buffered on robot
   robot_command->Attribute("Size", &cmd_buff_len);
-
+  //ROS_INFO_STREAM_NAMED("kuka_ehi_hw_interface", "received XML packet");
   return true;
 }
 
@@ -283,7 +298,7 @@ void KukaEkiHardwareInterface::read(const ros::Time &time, const ros::Duration &
                       + std::to_string(eki_read_state_timeout_) + " seconds.  Make sure eki_hw_interface is running "
                       "on the robot controller and all configurations are correct.";
     ROS_ERROR_STREAM(msg);
-    throw std::runtime_error(msg);
+    //throw std::runtime_error(msg);
   }
 }
 
