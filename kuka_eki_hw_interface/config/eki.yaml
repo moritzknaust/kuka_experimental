@@ -1,0 +1,4 @@
+eki:
+    robot_port: 6008
+    socket_timeout: 10
+  
